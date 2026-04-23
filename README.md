@@ -1,23 +1,46 @@
-# People REST API
+# Sistema de Controle de Receitas
 
-API REST para gerenciamento de pessoas, construída com **Node.js + Express + Sequelize + PostgreSQL**.
-
-## Funcionalidades
-
-- CRUD completo de pessoas
-- Filtros por nome, email, cidade e faixa etária
-- Ordenação por qualquer campo
-- Paginação
+Aplicação web MVC construída com **Node.js + Express + Sequelize + PostgreSQL + Handlebars**, com CRUD completo de Usuários, Categorias e Receitas. Inclui também uma REST API para gerenciamento de Pessoas.
 
 ## Estrutura de arquivos
 
 ```
 ├── config/
-│   └── db.js          # Conexão Sequelize/PostgreSQL
+│   ├── db.js                    # Conexão Sequelize para REST API (Pessoa)
+│   └── db_sequelize.js          # Conexão Sequelize para MVC (Usuario, Categoria, Receita)
+├── controllers/
+│   ├── controllerCategoria.js
+│   ├── controllerComentario.js
+│   ├── controllerReceita.js
+│   └── controllerUsuario.js
 ├── models/
-│   └── pessoa.js      # Model Pessoa
-├── package.json
-└── app.js             # Rotas e servidor
+│   ├── pessoa.js                # Model REST API
+│   └── relational/
+│       ├── categoria.js
+│       ├── receita.js
+│       └── usuario.js
+├── routers/
+│   └── route.js                 # Rotas MVC
+├── views/
+│   ├── layouts/
+│   │   └── main.handlebars      # Layout com menu de navegação
+│   ├── categoria/
+│   │   ├── categoriaCreate.handlebars
+│   │   ├── categoriaList.handlebars
+│   │   └── categoriaUpdate.handlebars
+│   ├── receita/
+│   │   ├── receitaCreate.handlebars
+│   │   ├── receitaList.handlebars
+│   │   └── receitaUpdate.handlebars
+│   ├── usuario/
+│   │   ├── login.handlebars
+│   │   ├── usuarioCreate.handlebars
+│   │   ├── usuarioList.handlebars
+│   │   └── usuarioUpdate.handlebars
+│   └── home.handlebars
+├── .env.example
+├── app.js
+└── package.json
 ```
 
 ## Configuração
@@ -40,17 +63,43 @@ DB_PASS=sua_senha
 PORT=3000
 ```
 
-## Endpoints
+## Rotas MVC
 
-| Método | Rota          | Descrição                    |
-|--------|---------------|------------------------------|
-| GET    | /pessoas      | Listar pessoas (com filtros) |
-| GET    | /pessoas/:id  | Buscar pessoa por ID         |
-| POST   | /pessoas      | Criar pessoa                 |
-| PUT    | /pessoas/:id  | Atualizar pessoa             |
-| DELETE | /pessoas/:id  | Remover pessoa               |
+| Método | Rota                   | Descrição                  |
+|--------|------------------------|----------------------------|
+| GET    | /                      | Tela de login              |
+| POST   | /login                 | Autenticar usuário         |
+| GET    | /home                  | Página inicial             |
+| GET    | /usuarioCreate         | Formulário de cadastro     |
+| POST   | /usuarioCreate         | Criar usuário              |
+| GET    | /usuarioList           | Listar usuários            |
+| GET    | /usuarioUpdate/:id     | Formulário de edição       |
+| POST   | /usuarioUpdate         | Atualizar usuário          |
+| GET    | /usuarioDelete/:id     | Remover usuário            |
+| GET    | /categoriaCreate       | Formulário de cadastro     |
+| POST   | /categoriaCreate       | Criar categoria            |
+| GET    | /categoriaList         | Listar categorias          |
+| GET    | /categoriaUpdate/:id   | Formulário de edição       |
+| POST   | /categoriaUpdate       | Atualizar categoria        |
+| GET    | /categoriaDelete/:id   | Remover categoria          |
+| GET    | /receitaCreate         | Formulário de cadastro     |
+| POST   | /receitaCreate         | Criar receita              |
+| GET    | /receitaList           | Listar receitas            |
+| GET    | /receitaUpdate/:id     | Formulário de edição       |
+| POST   | /receitaUpdate         | Atualizar receita          |
+| GET    | /receitaDelete/:id     | Remover receita            |
 
-## Query Parameters (GET /pessoas)
+## REST API — Pessoas
+
+| Método | Rota              | Descrição                    |
+|--------|-------------------|------------------------------|
+| GET    | /api/pessoas      | Listar pessoas (com filtros) |
+| GET    | /api/pessoas/:id  | Buscar pessoa por ID         |
+| POST   | /api/pessoas      | Criar pessoa                 |
+| PUT    | /api/pessoas/:id  | Atualizar pessoa             |
+| DELETE | /api/pessoas/:id  | Remover pessoa               |
+
+### Query Parameters (GET /api/pessoas)
 
 | Parâmetro | Tipo   | Descrição                           |
 |-----------|--------|-------------------------------------|
@@ -64,37 +113,42 @@ PORT=3000
 | page      | number | Página (padrão: 1)                  |
 | limit     | number | Itens por página (padrão: 10, máx: 100) |
 
-## Exemplos de requisição
+## Relacionamentos
 
-```bash
-# Criar pessoa
-curl -X POST http://localhost:3000/pessoas \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"João Silva","email":"joao@email.com","idade":30,"cidade":"São Paulo"}'
+- **Categoria** tem muitas **Receitas** (1:N)
+- Chave estrangeira: `categoriaId` na tabela `receitas`
+- `onDelete: NO ACTION` — impede exclusão de categoria com receitas vinculadas
 
-# Listar com filtros e paginação
-curl "http://localhost:3000/pessoas?cidade=São Paulo&idadeMin=25&orderBy=nome&page=1&limit=5"
+## Modelos
 
-# Buscar por ID
-curl http://localhost:3000/pessoas/1
+### Usuario
+| Campo | Tipo    | Obrigatório |
+|-------|---------|-------------|
+| id    | integer | auto        |
+| login | string  | sim         |
+| senha | string  | sim         |
+| tipo  | integer | sim         |
 
-# Atualizar
-curl -X PUT http://localhost:3000/pessoas/1 \
-  -H "Content-Type: application/json" \
-  -d '{"cidade":"Curitiba"}'
+### Categoria
+| Campo | Tipo    | Obrigatório |
+|-------|---------|-------------|
+| id    | integer | auto        |
+| nome  | string  | sim         |
 
-# Remover
-curl -X DELETE http://localhost:3000/pessoas/1
-```
+### Receita
+| Campo        | Tipo    | Obrigatório |
+|--------------|---------|-------------|
+| id           | integer | auto        |
+| nome         | string  | sim         |
+| ingredientes | string  | sim         |
+| preparo      | string  | sim         |
+| categoriaId  | integer | sim         |
 
-## Modelo de Pessoa
-
-| Campo     | Tipo    | Obrigatório | Descrição            |
-|-----------|---------|-------------|----------------------|
-| id        | integer | auto        | Chave primária       |
-| nome      | string  | sim         | Nome completo        |
-| email     | string  | sim         | E-mail único         |
-| idade     | integer | sim         | Idade (0-150)        |
-| cidade    | string  | não         | Cidade de residência |
-| createdAt | date    | auto        | Data de criação      |
-| updatedAt | date    | auto        | Data de atualização  |
+### Pessoa (REST API)
+| Campo     | Tipo    | Obrigatório |
+|-----------|---------|-------------|
+| id        | integer | auto        |
+| nome      | string  | sim         |
+| email     | string  | sim (único) |
+| idade     | integer | sim         |
+| cidade    | string  | não         |
