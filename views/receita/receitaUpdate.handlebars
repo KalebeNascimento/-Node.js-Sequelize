@@ -1,0 +1,18 @@
+<h2>Editar Receita</h2>
+<form action="/receitaUpdate" method="post">
+  <input type="hidden" name="id" value={{receita.id}}>
+  Nome: <input type="text" name="nome" value="{{receita.nome}}">
+  <br><br>
+  Ingredientes: <input type="text" name="ingredientes" value="{{receita.ingredientes}}">
+  <br><br>
+  Preparo: <input type="text" name="preparo" value="{{receita.preparo}}">
+  <br><br>
+  Categoria:
+  <select name="categoriaId">
+    {{#each categorias}}
+    <option value={{id}}>{{nome}}</option>
+    {{/each}}
+  </select>
+  <br><br>
+  <input type="submit" value="Editar">
+</form>

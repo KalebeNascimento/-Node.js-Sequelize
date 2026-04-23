@@ -1,14 +1,26 @@
 require('dotenv').config();
 const express = require('express');
+const { engine } = require('express-handlebars');
 const { Op, ValidationError, UniqueConstraintError } = require('sequelize');
 const sequelize = require('./config/db');
 const Pessoa = require('./models/pessoa');
+const db = require('./config/db_sequelize');
+const route = require('./routers/route');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Listar pessoas com filtros, ordenação e paginação
-app.get('/pessoas', async (req, res) => {
+// View engine
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', './views');
+
+// MVC routes
+app.use('/', route);
+
+// REST API - Pessoas
+app.get('/api/pessoas', async (req, res) => {
   try {
     const {
       nome, email, cidade,
@@ -54,8 +66,7 @@ app.get('/pessoas', async (req, res) => {
   }
 });
 
-// Buscar pessoa por ID
-app.get('/pessoas/:id', async (req, res) => {
+app.get('/api/pessoas/:id', async (req, res) => {
   try {
     const pessoa = await Pessoa.findByPk(req.params.id);
     if (!pessoa) return res.status(404).json({ erro: 'Pessoa não encontrada' });
@@ -65,8 +76,7 @@ app.get('/pessoas/:id', async (req, res) => {
   }
 });
 
-// Criar pessoa
-app.post('/pessoas', async (req, res) => {
+app.post('/api/pessoas', async (req, res) => {
   try {
     const pessoa = await Pessoa.create(req.body);
     res.status(201).json(pessoa);
@@ -78,8 +88,7 @@ app.post('/pessoas', async (req, res) => {
   }
 });
 
-// Atualizar pessoa
-app.put('/pessoas/:id', async (req, res) => {
+app.put('/api/pessoas/:id', async (req, res) => {
   try {
     const pessoa = await Pessoa.findByPk(req.params.id);
     if (!pessoa) return res.status(404).json({ erro: 'Pessoa não encontrada' });
@@ -93,8 +102,7 @@ app.put('/pessoas/:id', async (req, res) => {
   }
 });
 
-// Remover pessoa
-app.delete('/pessoas/:id', async (req, res) => {
+app.delete('/api/pessoas/:id', async (req, res) => {
   try {
     const pessoa = await Pessoa.findByPk(req.params.id);
     if (!pessoa) return res.status(404).json({ erro: 'Pessoa não encontrada' });
@@ -107,7 +115,10 @@ app.delete('/pessoas/:id', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-sequelize.sync({ alter: true }).then(() => {
+Promise.all([
+  db.sequelize.sync({ alter: true }),
+  sequelize.sync({ alter: true }),
+]).then(() => {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
